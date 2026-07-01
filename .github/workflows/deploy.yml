@@ -1,0 +1,55 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "apps/worker/**"
+      - "internal/**"
+      - "pkg/**"
+      - "go.mod"
+      - "go.sum"
+      - "infra/terraform/**"
+      - "infra/docker/Dockerfile.api"
+      - "infra/docker/Dockerfile.worker"
+
+env:
+  GO_VERSION: "1.22"
+  GCP_REGION: "us-central1"
+  GAR_LOCATION: "us-central1-docker.pkg.dev"
+
+jobs:
+  deploy-api:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud builds submit --tag "gcr.io/${{ vars.PROJECT_ID }}/api:${{ github.sha }}" -f infra/docker/Dockerfile.api .
+      - run: gcloud run deploy travel-bot-api --image "gcr.io/${{ vars.PROJECT_ID }}/api:${{ github.sha }}" --region ${{ env.GCP_REGION }} --platform managed --allow-unauthenticated
+
+  deploy-worker:
+    name: Deploy Worker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud builds submit --tag "gcr.io/${{ vars.PROJECT_ID }}/worker:${{ github.sha }}" -f infra/docker/Dockerfile.worker .
+      - run: gcloud run deploy travel-bot-worker --image "gcr.io/${{ vars.PROJECT_ID }}/worker:${{ github.sha }}" --region ${{ env.GCP_REGION }} --platform managed --no-allow-unauthenticated

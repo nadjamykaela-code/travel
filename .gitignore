@@ -1,0 +1,12 @@
+.env
+infra/firebase/*.json
+infra/docker/creds/
+cmd
+*.log
+node_modules/
+dist/
+.terraform/
+*.tfstate*
+*.tfvars
+.DS_Store
+coverage/

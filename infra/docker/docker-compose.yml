@@ -1,0 +1,121 @@
+services:
+  firestore:
+    image: google/cloud-sdk:latest
+    entrypoint: gcloud
+    command: beta emulators firestore start --host-port=0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    restart: unless-stopped
+    networks:
+      - travel-net
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - FIRESTORE_EMULATOR_HOST=firestore:8200
+      - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+      - SKYSCANNER_API_KEY=${SKYSCANNER_API_KEY}
+      - SKYSCANNER_BASE_URL=${SKYSCANNER_BASE_URL}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - FCM_CREDENTIALS=/app/creds/fcm.json
+      - K_SERVICE=travel-api
+      - K_REVISION=local-1
+      - K_CONFIGURATION=travel-api
+    volumes:
+      - ../../infra/firebase:/app/creds:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    depends_on:
+      firestore:
+        condition: service_started
+    networks:
+      - travel-net
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.worker
+    environment:
+      - PORT=8080
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - FIRESTORE_EMULATOR_HOST=firestore:8200
+      - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+      - SKYSCANNER_API_KEY=${SKYSCANNER_API_KEY}
+      - SKYSCANNER_BASE_URL=${SKYSCANNER_BASE_URL}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - FCM_CREDENTIALS=/app/creds/fcm.json
+      - K_SERVICE=travel-worker
+      - K_REVISION=local-1
+      - K_CONFIGURATION=travel-worker
+    volumes:
+      - ../../infra/firebase:/app/creds:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    depends_on:
+      firestore:
+        condition: service_started
+    networks:
+      - travel-net
+
+  scheduler:
+    image: alpine/curl:latest
+    entrypoint: >
+      sh -c '
+        echo "Scheduler started: calling worker /run every 15 minutes"
+        while true; do
+          echo "[$(date)] Triggering worker run..."
+          curl -sf -X POST http://worker:8080/run && echo " OK" || echo " FAILED"
+          sleep 900
+        done
+      '
+    restart: unless-stopped
+    depends_on:
+      worker:
+        condition: service_started
+    networks:
+      - travel-net
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - travel-net
+
+networks:
+  travel-net:
+    driver: bridge

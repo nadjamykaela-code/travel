@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Filtros de busca — apenas o dono pode ler/escrever
+    match /filters/{document} {
+      allow read, update, delete: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.origin is string
+        && request.resource.data.destination is string
+        && request.resource.data.priceMax is number
+        && request.resource.data.passengers is number
+        && request.resource.data.passengers >= 1
+        && request.resource.data.priceMax > 0
+        && request.resource.data.origin != request.resource.data.destination;
+    }
+
+    // Histórico de buscas — apenas o dono pode ler; worker escreve
+    match /history/{document} {
+      allow read: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.filterId is string;
+      allow delete: if false;  // ninguém apaga histórico
+    }
+
+    // Perfis de usuário — apenas o próprio usuário
+    match /users/{document} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == document;
+    }
+
+    // Negar todo o resto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
