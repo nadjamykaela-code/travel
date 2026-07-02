@@ -30,6 +30,15 @@ export interface AuthState {
   loading: boolean;
 }
 
+export interface Place {
+  entityId: string;
+  iataCode: string;
+  name: string;
+  cityName: string;
+  countryName: string;
+  type: string;
+}
+
 export interface FilterFormData {
   origin: string;
   destination: string;

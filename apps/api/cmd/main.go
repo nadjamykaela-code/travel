@@ -18,6 +18,7 @@ import (
 	"github.com/nadjamykaela-code/travel/apps/api/service"
 	"github.com/nadjamykaela-code/travel/internal/config"
 	"github.com/nadjamykaela-code/travel/internal/firestore"
+	"github.com/nadjamykaela-code/travel/pkg/clients"
 )
 
 func main() {
@@ -74,9 +75,12 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	placeClient := clients.NewPlaceSearchClient(cfg.SkyscannerAPIKey, cfg.SkyscannerBaseURL)
+
 	deps := &routes.Dependencies{
-		FilterService: filterSvc,
-		AuthService:   authSvc,
+		FilterService:      filterSvc,
+		AuthService:        authSvc,
+		PlaceSearchClient:  placeClient,
 	}
 	routes.RegisterRoutes(router, deps)
 

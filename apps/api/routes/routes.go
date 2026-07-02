@@ -5,16 +5,19 @@ import (
 	"github.com/nadjamykaela-code/travel/apps/api/handlers"
 	"github.com/nadjamykaela-code/travel/apps/api/middleware"
 	"github.com/nadjamykaela-code/travel/apps/api/service"
+	"github.com/nadjamykaela-code/travel/pkg/clients"
 )
 
 type Dependencies struct {
-	FilterService *service.FilterService
-	AuthService   service.AuthService
+	FilterService   *service.FilterService
+	AuthService     service.AuthService
+	PlaceSearchClient *clients.PlaceSearchClient
 }
 
 func RegisterRoutes(router *gin.Engine, deps *Dependencies) {
 	filterHandler := handlers.NewFilterHandler(deps.FilterService)
 	authHandler := handlers.NewAuthHandler(deps.AuthService)
+	placeHandler := handlers.NewPlaceHandler(deps.PlaceSearchClient)
 	authMW := middleware.NewAuthMiddleware(deps.AuthService)
 
 	router.GET("/health", func(c *gin.Context) {
@@ -32,6 +35,7 @@ func RegisterRoutes(router *gin.Engine, deps *Dependencies) {
 		api.PUT("/filters/:id", filterHandler.UpdateFilter)
 		api.DELETE("/filters/:id", filterHandler.DeleteFilter)
 		api.GET("/auth/verify", authHandler.VerifyToken)
+		api.GET("/places/search", placeHandler.Search)
 	}
 
 	router.GET("/", func(c *gin.Context) {

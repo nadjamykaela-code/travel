@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Filter } from '../types';
+import type { Filter, Place } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -19,6 +19,10 @@ export const filterService = {
   create: (data: Omit<Filter, 'id' | 'userId'>) => api.post<Filter>('/filters', data),
   update: (id: string, data: Partial<Filter>) => api.put<Filter>(`/filters/${id}`, data),
   remove: (id: string) => api.delete(`/filters/${id}`),
+};
+
+export const placeService = {
+  search: (q: string) => api.get<Place[]>('/places/search', { params: { q } }),
 };
 
 export const authService = {

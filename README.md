@@ -1,5 +1,7 @@
 # Travel Bot — Busca de Passagens (GCP Always Free)
 
+> ⚠️ **Aviso:** Este projeto ainda **não possui chaves de API** configuradas (Skyscanner, SendGrid, Firebase). Para executar localmente, é necessário obter e configurar as chaves no arquivo `infra/docker/.env`. Veja a seção [CI/CD — GitHub Actions](#cicd--github-actions) para a lista completa de variáveis necessárias.
+
 Sistema automático de busca de passagens aéreas rodando 100% no **GCP Free Tier**. Usuários criam filtros de busca pela web, e um worker agendado consulta a Skyscanner API, notificando por e-mail (SendGrid) e push (FCM) quando encontra voos dentro dos critérios.
 
 ## Arquitetura

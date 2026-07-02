@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Filter, FilterFormData } from '../types';
-import { X } from 'lucide-react';
+import { X, ArrowLeftRight, Globe } from 'lucide-react';
+import { AirportAutocomplete } from './AirportAutocomplete';
 
 interface FilterFormProps {
   filter?: Filter | null;
@@ -91,11 +92,58 @@ export function FilterForm({ filter, onSubmit, onClose }: FilterFormProps) {
             <div className={half}>
               <div>
                 <label className={label} htmlFor="origin">Origem</label>
-                <input id="origin" className={input} value={form.origin} onChange={(e) => update('origin', e.target.value)} required placeholder="GRU" />
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <AirportAutocomplete
+                      value={form.origin}
+                      onChange={(iata) => update('origin', iata === 'ANY' ? 'ANY' : iata)}
+                      placeholder="Cidade ou aeroporto"
+                      otherValue={form.destination}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const orig = form.origin;
+                      const dest = form.destination;
+                      update('origin', dest);
+                      update('destination', orig);
+                    }}
+                    className="self-end p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Inverter origem/destino"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <label className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400 cursor-pointer hover:text-blue-600 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.origin === 'ANY'}
+                    onChange={(e) => update('origin', e.target.checked ? 'ANY' : '')}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Globe className="h-3 w-3" />
+                  Qualquer lugar
+                </label>
               </div>
               <div>
                 <label className={label} htmlFor="destination">Destino</label>
-                <input id="destination" className={input} value={form.destination} onChange={(e) => update('destination', e.target.value)} required placeholder="LIS" />
+                <AirportAutocomplete
+                  value={form.destination}
+                  onChange={(iata) => update('destination', iata === 'ANY' ? 'ANY' : iata)}
+                  placeholder="Cidade ou aeroporto"
+                  otherValue={form.origin}
+                />
+                <label className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400 cursor-pointer hover:text-blue-600 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.destination === 'ANY'}
+                    onChange={(e) => update('destination', e.target.checked ? 'ANY' : '')}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Globe className="h-3 w-3" />
+                  Qualquer lugar
+                </label>
               </div>
             </div>
           </fieldset>
